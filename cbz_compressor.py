@@ -30,9 +30,13 @@ def remove_temp_dir():
             os.remove(TEMP_DIR_PATH+"\\"+file_name)
         os.rmdir(TEMP_DIR_PATH)
 
-def compress_cbz(file_path,output_path,grey=False,width=None,height=None):
-    print("> Compressing '{}' ...".format(os.path.basename(file_path)))
+def compress_cbz(file_path,output_path,grey,width,height,verbose,size):
+    if file_path[-4:] != ".cbz":
+        print("[Error] '{}'Not a cbz file").format(os.path.basename(file_path))
+        return False
 
+    print("> Compressing '{}' ...".format(os.path.basename(file_path)))
+    
     create_temp_dir()
 
     with ZipFile(file_path, 'r') as cbz_file:
@@ -47,36 +51,60 @@ def compress_cbz(file_path,output_path,grey=False,width=None,height=None):
 
     image_list = os.listdir(TEMP_DIR_PATH)
 
-    for image_file in image_list:
+    for i,image_file in enumerate(image_list):
         img = Image.open(TEMP_DIR_PATH+"\\"+image_file)
-        if width is not None and height is not None:
+        if size is not None:
+            img = img.resize((img.width*size,img.height*size))
+        elif width is not None and height is not None:
             img = img.resize((width,height))
         if grey:
             img = img = img.convert('L')
         img.save(TEMP_DIR_PATH+"\\"+image_file, format='JPEG')
         new_cbz_file.write(TEMP_DIR_PATH+"\\"+image_file,arcname=image_file)
+        
+        if verbose:
+            print("Image compressed in '{}' : {}/{} [{}%]".format(os.path.basename(file_path),i+1,len(image_list),int((i+1)*100/len(image_list))))
 
     remove_temp_dir()
 
     print("> Compressed '{}'".format(os.path.basename(file_path)))
-                
+    
+    return True
+
+def compress_directory(dir_path,output_path,grey,width,height,verbose,size):
+    cbz_list = os.listdir(dir_path)
+    for cbz_file in cbz_list:
+        compress_cbz(dir_path+"\\"+cbz_file,output_path,grey,width,height,verbose,size)
+    
+    return True
+
 if __name__ == "__main__":
     args = argument_parser()
     if "-output" in args and args["-output"] is not None:
         output_path = args["-output"]
     else:
         output_path = None
+    if "-verbose" in args:
+        verbose = True
+    else:
+        verbose = False
     if "-grey" in args:
         grey = True
     else:
         grey = False
     if "-width" in args and args["-width"] is not None:
-        width = int(args["-width"])
+        width = args["-width"]
     else:
         width = None
     if "-height" in args and args["-height"] is not None:
-        height = int(args["-height"])
+        height = args["-height"]
     else:
         height = None
-
-    compress_cbz(os.path.realpath(sys.argv[-1]),output_path,grey,width,height)
+    if "-size" in args and args["-size"] is not None:
+        size = args["-size"]
+    else:
+        size = None
+    if os.path.isfile(os.path.realpath(sys.argv[-1])):
+        compress_cbz(os.path.realpath(sys.argv[-1]),output_path,grey,int(width),int(height),verbose,size)
+    elif os.path.isdir(os.path.realpath(sys.argv[-1])):
+        compress_directory(os.path.realpath(sys.argv[-1]),output_path,grey,int(width),int(height),verbose,size)
