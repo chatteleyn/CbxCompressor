@@ -30,7 +30,7 @@ def remove_temp_dir():
             os.remove(TEMP_DIR_PATH+"\\"+file_name)
         os.rmdir(TEMP_DIR_PATH)
 
-def compress_cbz(file_path,output_path,grey,width,height,verbose,size):
+def compress_cbz(file_path,output_path=None,grey=False,size=None,width=None,height=None,verbose=False):
     if file_path[-4:] != ".cbz":
         print("[Error] '{}'Not a cbz file").format(os.path.basename(file_path))
         return False
@@ -53,7 +53,7 @@ def compress_cbz(file_path,output_path,grey,width,height,verbose,size):
 
     for i,image_file in enumerate(image_list):
         img = Image.open(TEMP_DIR_PATH+"\\"+image_file)
-        if size is not None:
+        if size is not None and size >= 0 and size <= 1:
             img = img.resize((img.width*size,img.height*size))
         elif width is not None and height is not None:
             img = img.resize((width,height))
@@ -71,10 +71,10 @@ def compress_cbz(file_path,output_path,grey,width,height,verbose,size):
     
     return True
 
-def compress_directory(dir_path,output_path,grey,width,height,verbose,size):
+def compress_directory(dir_path,output_path=None,grey=False,size=None,width=None,height=None,verbose=False):
     cbz_list = os.listdir(dir_path)
     for cbz_file in cbz_list:
-        compress_cbz(dir_path+"\\"+cbz_file,output_path,grey,width,height,verbose,size)
+        compress_cbz(dir_path+"\\"+cbz_file,output_path,grey,size,width,height,verbose)
     
     return True
 
@@ -105,6 +105,6 @@ if __name__ == "__main__":
     else:
         size = None
     if os.path.isfile(os.path.realpath(sys.argv[-1])):
-        compress_cbz(os.path.realpath(sys.argv[-1]),output_path,grey,int(width),int(height),verbose,size)
+        compress_cbz(file_path=os.path.realpath(sys.argv[-1]),output_path=output_path,grey=grey,size=float(size),width=int(width),height=int(height),verbose=verbose)
     elif os.path.isdir(os.path.realpath(sys.argv[-1])):
-        compress_directory(os.path.realpath(sys.argv[-1]),output_path,grey,int(width),int(height),verbose,size)
+        compress_directory(dir_path=os.path.realpath(sys.argv[-1]),output_path=put_path,grey=grey,size=float(size),width=int(width),height=int(height),verbose=verbose)
