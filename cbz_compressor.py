@@ -4,21 +4,63 @@ from zipfile import ZipFile
 from PIL import Image
 
 TEMP_DIR_PATH= "temp"
+ARGUMENTS = {
+    "output" : {
+        "aliases" : ["-output","-o"],
+        "type" : str,
+        "value" : None
+    },
+    "verbose" : {
+        "aliases" : ["-verbose","-v"],
+        "type" : bool,
+        "value" : False
+    },
+    "grey" : {
+        "aliases" : ["-grey","-g"],
+        "type" : bool,
+        "value" : False
+    },
+    "size" : {
+        "aliases" : ["-size","-s"],
+        "type" : float,
+        "value" : None
+    },
+    "width" : {
+        "aliases" : ["-width","-w"],
+        "type" : int,
+        "value" : None
+    },
+    "height" : {
+        "aliases" : ["-height","-h"],
+        "type" : int,
+        "value" : None
+    },
+}
 
-def argument_parser():
+def argument_parser(args_data):
     args = sys.argv
-    parsed_args = {}
     i = 0
     while i < len(args):
         if args[i][:1] == "-":
-            if i+1 <= len(args) and args[i+1][:1] != "-":
-                parsed_args[args[i]] = args[i+1]
-                i += 1
-            else:
-                parsed_args[args[i]] = None
-        i += 1
-    
-    return parsed_args
+            for arg in args_data:
+                if args[i] in args_data[arg]["aliases"]:
+                    if args_data[arg]["type"] is bool:
+                        args_data[arg]["value"] = True
+                    elif args_data[arg]["type"] is str:
+                        if i+1 < len(args) and args[i+1][:1] != "-":
+                            args_data[arg]["value"] = args[i+1]
+                            i+=1
+                    elif args_data[arg]["type"] is int:
+                        if i+1 < len(args) and args[i+1][:1] != "-":
+                            args_data[arg]["value"] = int(args[i+1])
+                            i+=1
+                    elif args_data[arg]["type"] is float:
+                        if i+1 < len(args) and args[i+1][:1] != "-":
+                            args_data[arg]["value"] = float(args[i+1])
+                            i+=1
+        i+=1
+
+    return args_data
 
 def create_temp_dir():
     if not os.path.isdir(TEMP_DIR_PATH):
@@ -31,8 +73,11 @@ def remove_temp_dir():
         os.rmdir(TEMP_DIR_PATH)
 
 def compress_cbz(file_path,output_path=None,grey=False,size=None,width=None,height=None,verbose=False):
-    if file_path[-4:] != ".cbz":
-        print("[Error] '{}'Not a cbz file").format(os.path.basename(file_path))
+    if os.path.isdir(file_path):
+        print("[Error] '{}' is a directory".format(os.path.basename(file_path)))
+        return False
+    elif file_path[-4:] != ".cbz":
+        print("[Error] '{}' is not a cbz file".format(os.path.basename(file_path)))
         return False
 
     print("> Compressing '{}' ...".format(os.path.basename(file_path)))
@@ -79,32 +124,24 @@ def compress_directory(dir_path,output_path=None,grey=False,size=None,width=None
     return True
 
 if __name__ == "__main__":
-    args = argument_parser()
-    if "-output" in args and args["-output"] is not None:
-        output_path = args["-output"]
-    else:
-        output_path = None
-    if "-verbose" in args:
-        verbose = True
-    else:
-        verbose = False
-    if "-grey" in args:
-        grey = True
-    else:
-        grey = False
-    if "-width" in args and args["-width"] is not None:
-        width = args["-width"]
-    else:
-        width = None
-    if "-height" in args and args["-height"] is not None:
-        height = args["-height"]
-    else:
-        height = None
-    if "-size" in args and args["-size"] is not None:
-        size = args["-size"]
-    else:
-        size = None
+    args = argument_parser(ARGUMENTS)
+
     if os.path.isfile(os.path.realpath(sys.argv[-1])):
-        compress_cbz(file_path=os.path.realpath(sys.argv[-1]),output_path=output_path,grey=grey,size=float(size),width=int(width),height=int(height),verbose=verbose)
+        compress_cbz(
+        file_path=os.path.realpath(sys.argv[-1]),
+        output_path=args["output"]["value"],
+        grey=args["grey"]["value"],
+        size=args["size"]["value"],
+        width=args["width"]["value"],
+        height=args["height"]["value"],
+        verbose=args["verbose"]["value"])
+    
     elif os.path.isdir(os.path.realpath(sys.argv[-1])):
-        compress_directory(dir_path=os.path.realpath(sys.argv[-1]),output_path=put_path,grey=grey,size=float(size),width=int(width),height=int(height),verbose=verbose)
+        compress_directory(
+        dir_path=os.path.realpath(sys.argv[-1]),
+        output_path=args["output"]["value"],
+        grey=args["grey"]["value"],
+        size=args["size"]["value"],
+        width=args["width"]["value"],
+        height=args["height"]["value"],
+        verbose=args["verbose"]["value"])
