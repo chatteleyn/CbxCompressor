@@ -99,7 +99,7 @@ def compress_cbz(file_path,output_path=None,grey=False,size=None,width=None,heig
     for i,image_file in enumerate(image_list):
         img = Image.open(TEMP_DIR_PATH+"\\"+image_file)
         if size is not None and size >= 0 and size <= 1:
-            img = img.resize((img.width*size,img.height*size))
+            img = img.resize((int(img.width*size),int(img.height*size)))
         elif width is not None and height is not None:
             img = img.resize((width,height))
         if grey:
